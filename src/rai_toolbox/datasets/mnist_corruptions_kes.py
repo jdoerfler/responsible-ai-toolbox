@@ -8,13 +8,13 @@ from pathlib import Path
 from typing import Any, Callable, Optional, Tuple, Union
 
 # TODO: fix this to use package import from __init__.py
+# from ._utils import md5_check
 import _utils
 import numpy as np
 from PIL import Image
 from torch.utils.data import DataLoader, random_split
 from torchvision.datasets.utils import download_and_extract_archive
 from torchvision.datasets.vision import VisionDataset
-from torchvision.transforms import ToPILImage
 from typing_extensions import Literal
 
 __all__ = ["MNISTC"]
@@ -168,6 +168,7 @@ class MNISTC(VisionDataset):
         zip_path = Path.joinpath(root_path, self.filename)
 
         if Path.is_file(zip_path):
+            # TODO: change back when package errors are resolved
             zip_md5_check = _utils.md5_check(zip_path) == self.zip_md5
             if not zip_md5_check:
                 return False
@@ -212,8 +213,9 @@ class MNISTC(VisionDataset):
         img, target = self.data[index], self.targets[index]
 
         # doing this so that it is consistent with all other datasets
-        # to return a PIL Image
-        img = ToPILImage(img)
+        # to return a PIL Image -- need to drop last dimension to
+        # properly import using PIL
+        img = Image.fromarray(img[:, :, 0])
 
         if self.transform is not None:
             img = self.transform(img)
@@ -249,3 +251,4 @@ mnistc_train_dataloader = DataLoader(d1, batch_size=64)
 mnistc_test_dataloader = DataLoader(d2, batch_size=64)
 print(d1.__len__())
 print(d2.__len__())
+MNISTC["birds"]
