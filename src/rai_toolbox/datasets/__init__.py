@@ -7,6 +7,8 @@ from .cifar10_extensions import CIFAR10P1
 from .cifar_corruptions import CIFAR10C, CIFAR100C
 from .mnist_corruptions_kes import MNISTC
 
+# TODO: fix package errors and remove kes identifier in package file
+
 __all__ = [
     "CIFAR10C",
     "CIFAR100C",
