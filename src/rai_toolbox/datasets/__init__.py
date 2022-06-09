@@ -16,5 +16,5 @@ __all__ = [
     "ImageNet",
     "ImageNetM10",
     "RestrictedImageNet",
-    "MNISTC"
+    "MNISTC",
 ]

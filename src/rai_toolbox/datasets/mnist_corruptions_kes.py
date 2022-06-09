@@ -2,19 +2,20 @@
 # Subject to FAR 52.227-11 – Patent Rights – Ownership by the Contractor (May 2014).
 # SPDX-License-Identifier: MIT
 
-from pathlib import Path
-from typing import Any, Callable, Optional, Union, Tuple
-from typing_extensions import Literal
-
 import hashlib
-import numpy as np
-from PIL import Image
-from torchvision.transforms import ToPILImage
-from torchvision.datasets.utils import download_and_extract_archive
-from torchvision.datasets.vision import VisionDataset
+from math import floor
+from pathlib import Path
+from typing import Any, Callable, Optional, Tuple, Union
 
 # TODO: fix this to use package import from __init__.py
 import _utils
+import numpy as np
+from PIL import Image
+from torch.utils.data import DataLoader, random_split
+from torchvision.datasets.utils import download_and_extract_archive
+from torchvision.datasets.vision import VisionDataset
+from torchvision.transforms import ToPILImage
+from typing_extensions import Literal
 
 __all__ = ["MNISTC"]
 
@@ -38,11 +39,8 @@ Corruptions = Literal[
     "translate",
     "zigzag",
 ]
-Groupings = Literal[
-    "train",
-    "test",
-    "combined"
-]
+Groupings = Literal["train", "test", "combined"]
+
 
 class MNISTC(VisionDataset):
 
@@ -71,11 +69,7 @@ class MNISTC(VisionDataset):
         "zigzag",
     )
 
-    all_groupings = (
-        "train",
-        "test",
-        "combined"
-    )
+    all_groupings = ("train", "test", "combined")
 
     def __init__(
         self,
@@ -116,16 +110,19 @@ class MNISTC(VisionDataset):
 
         # TODO: check to see how using _root below in downloader affects torchvision root in base class
         self._root = (Path(self.root) / self.base_folder).resolve()
-        assert corruption in self.all_corruptions,f"The corruption '{corruption}' is invalid"
+        assert (
+            corruption in self.all_corruptions
+        ), f"The corruption '{corruption}' is invalid"
         self.corruption = corruption
 
-        assert grouping in self.all_groupings,f"The grouping '{grouping}' is invalid: valid choices" \
+        assert grouping in self.all_groupings, (
+            f"The grouping '{grouping}' is invalid: valid choices"
             " are 'train', 'test', or 'combined'"
+        )
         self.grouping = grouping
 
         if download:
             self.download()
-
 
         if not self._check_integrity():
             raise RuntimeError(
@@ -133,16 +130,23 @@ class MNISTC(VisionDataset):
                 + " You can use download=True to download it"
             )
 
-        
         if self.grouping == "test" or self.grouping == "combined":
-            test_images_path = Path.joinpath(self._root, "mnist_c", corruption, "test_images.npy")
-            test_labels_path = Path.joinpath(self._root, "mnist_c", corruption, "test_labels.npy")
+            test_images_path = Path.joinpath(
+                self._root, "mnist_c", corruption, "test_images.npy"
+            )
+            test_labels_path = Path.joinpath(
+                self._root, "mnist_c", corruption, "test_labels.npy"
+            )
             mmap_test = np.load(test_images_path, mmap_mode="r")
             test_target = np.load(test_labels_path)
 
         if self.grouping == "train" or self.grouping == "combined":
-            train_images_path = Path.joinpath(self._root, "mnist_c", corruption, "train_images.npy")
-            train_labels_path = Path.joinpath(self._root, "mnist_c", corruption, "train_labels.npy")
+            train_images_path = Path.joinpath(
+                self._root, "mnist_c", corruption, "train_images.npy"
+            )
+            train_labels_path = Path.joinpath(
+                self._root, "mnist_c", corruption, "train_labels.npy"
+            )
             mmap_train = np.load(train_images_path, mmap_mode="r")
             train_target = np.load(train_labels_path)
 
@@ -159,7 +163,6 @@ class MNISTC(VisionDataset):
         else:
             raise RuntimeError(f"Unknown grouping: {self.grouping}")
 
-    
     def _check_integrity(self) -> bool:
         root_path = Path(self._root)
         zip_path = Path.joinpath(root_path, self.filename)
@@ -175,8 +178,8 @@ class MNISTC(VisionDataset):
             if not file.is_file():
                 continue
             files_to_checksum.append(file)
-                
-        # sort the file paths to make MD5 deterministic        
+
+        # sort the file paths to make MD5 deterministic
         files_to_checksum.sort()
         hash_md5 = hashlib.md5()
 
@@ -184,11 +187,11 @@ class MNISTC(VisionDataset):
             # not using package .util hasher since this is
             # hashing over several files and needs to keep state
             # between files
-            chunksize: int = 1024 ** 2
+            chunksize: int = 1024**2
             with open(file, "rb") as f:
                 for chunk in iter(lambda: f.read(chunksize), b""):
                     hash_md5.update(chunk)
-        
+
         if hash_md5.hexdigest() != self.files_md5:
             return False
 
@@ -219,11 +222,10 @@ class MNISTC(VisionDataset):
             target = self.target_transform(target)
 
         return img, target
-    
+
     def __len__(self) -> int:
         return len(self.data)
 
-        
     def download(self) -> None:
         if self._check_integrity():
             print("Files already downloaded and verified")
@@ -234,13 +236,11 @@ class MNISTC(VisionDataset):
 
 
 # TODO: get rid of this testing code
-print('\n\n')
+print("\n\n")
 mnistc = MNISTC("data", "dotted_line", "combined", None, None, True)
 img, target = mnistc[5]
 print(mnistc.__len__())
 
-from torch.utils.data import DataLoader, random_split
-from math import floor
 split_percent = 0.9
 d1_size = floor(mnistc.__len__() * split_percent)
 d2_size = mnistc.__len__() - d1_size
