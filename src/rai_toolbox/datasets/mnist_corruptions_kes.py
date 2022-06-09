@@ -236,8 +236,16 @@ class MNISTC(VisionDataset):
 # TODO: get rid of this testing code
 print('\n\n')
 mnistc = MNISTC("data", "dotted_line", "combined", None, None, True)
-img, target = mnistc.__getitem__(5)
+img, target = mnistc[5]
+print(mnistc.__len__())
 
 from torch.utils.data import DataLoader, random_split
-mnistc_dataloader = DataLoader(mnistc, batch_size=64)
-print(mnistc.__len__())
+from math import floor
+split_percent = 0.9
+d1_size = floor(mnistc.__len__() * split_percent)
+d2_size = mnistc.__len__() - d1_size
+d1, d2 = random_split(mnistc, [d1_size, d2_size])
+mnistc_train_dataloader = DataLoader(d1, batch_size=64)
+mnistc_test_dataloader = DataLoader(d2, batch_size=64)
+print(d1.__len__())
+print(d2.__len__())
