@@ -3,19 +3,16 @@
 # SPDX-License-Identifier: MIT
 
 import hashlib
-from math import floor
 from pathlib import Path
 from typing import Any, Callable, Optional, Tuple, Union
 
-# TODO: fix this to use package import from __init__.py
-# from ._utils import md5_check
-import _utils
 import numpy as np
 from PIL import Image
-from torch.utils.data import DataLoader, random_split
 from torchvision.datasets.utils import download_and_extract_archive
 from torchvision.datasets.vision import VisionDataset
 from typing_extensions import Literal
+
+from ._utils import md5_check
 
 __all__ = ["MNISTC"]
 
@@ -168,8 +165,7 @@ class MNISTC(VisionDataset):
         zip_path = Path.joinpath(root_path, self.filename)
 
         if Path.is_file(zip_path):
-            # TODO: change back when package errors are resolved
-            zip_md5_check = _utils.md5_check(zip_path) == self.zip_md5
+            zip_md5_check = md5_check(zip_path) == self.zip_md5
             if not zip_md5_check:
                 return False
 
@@ -235,20 +231,3 @@ class MNISTC(VisionDataset):
         download_and_extract_archive(
             self.url, self._root, filename=self.filename, md5=self.zip_md5
         )
-
-
-# TODO: get rid of this testing code
-print("\n\n")
-mnistc = MNISTC("data", "dotted_line", "combined", None, None, True)
-img, target = mnistc[5]
-print(mnistc.__len__())
-
-split_percent = 0.9
-d1_size = floor(mnistc.__len__() * split_percent)
-d2_size = mnistc.__len__() - d1_size
-d1, d2 = random_split(mnistc, [d1_size, d2_size])
-mnistc_train_dataloader = DataLoader(d1, batch_size=64)
-mnistc_test_dataloader = DataLoader(d2, batch_size=64)
-print(d1.__len__())
-print(d2.__len__())
-MNISTC["birds"]
